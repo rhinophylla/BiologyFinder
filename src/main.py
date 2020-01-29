@@ -1,4 +1,4 @@
-'''
+'''  
 This script implements BiologyFinder, a program that identifies biologists whose work is similar to a user-specified biologist on the basis of shared reference history.  The progam also generates a recommended reading list of scientific articles relavent to the subfield of the specified biologist.
 '''
 import numpy as np
