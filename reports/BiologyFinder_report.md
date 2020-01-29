@@ -123,7 +123,7 @@ Future improvements for this tool include:
 1. Fixing author formatting bugs since the tool currently cannot handle:
 a. Papers with no author
 b. Papers where an author is a consortium and the "name" does not include a comma
-c. Author names formatted as first_initial middle_name last_name
+c. Author names formatted as first_initial middle_name last_name  
 2.  Search for relevant papers using keywords and author names to limit the number of spurious papers in the feature vector.
 3. Provide feedback to the user if one or more of the papers by the biologist of interest has no references in its PubMed entry.
 
