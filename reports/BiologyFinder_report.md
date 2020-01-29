@@ -82,16 +82,16 @@ Looking at the list more generally, several top matches are trainees (Ricardo Mi
 
 Finally, the program identifies papers that are most cited by the similar group of biologists.  Below is the report the program provided before asking the user how many papers they want in their recommended reading list.
 
-636 papers were cited at least once by 10% (4) of the most similar biologists
-160 papers were cited at least once by 20% (9) of the most similar biologists
-78 papers were cited at least once by 30% (13) of the most similar biologists
-25 papers were cited at least once by 40% (18) of the most similar biologists
-9 papers were cited at least once by 50% (23) of the most similar biologists
-2 papers were cited at least once by 60% (27) of the most similar biologists
-1 paper was cited at least once by 70% (32) of the most similar biologists
-0 papers were cited at least once by 80% (36) of the most similar biologists
-0 papers were cited at least once by 90% (41) of the most similar biologists
-0 papers were cited at least once by 100% (46) of the most similar biologists
+636 papers were cited at least once by 10% (4) of the most similar biologists. 
+160 papers were cited at least once by 20% (9) of the most similar biologists. 
+78 papers were cited at least once by 30% (13) of the most similar biologists. 
+25 papers were cited at least once by 40% (18) of the most similar biologists. 
+9 papers were cited at least once by 50% (23) of the most similar biologists. 
+2 papers were cited at least once by 60% (27) of the most similar biologists. 
+1 paper was cited at least once by 70% (32) of the most similar biologists. 
+0 papers were cited at least once by 80% (36) of the most similar biologists. 
+0 papers were cited at least once by 90% (41) of the most similar biologists. 
+0 papers were cited at least once by 100% (46) of the most similar biologists. 
 
 Given this information, I asked the program to return the references for 9 papers.  These 9 papers were cited by at least 50% of the most similar biologists and were returned in order from most cited to least.
 
@@ -121,9 +121,9 @@ This project was inspired by a project presented within the K2 Data Science boot
 ### Future work
 Future improvements for this tool include:
 1. Fixing author formatting bugs since the tool currently cannot handle:
-a. Papers with no author
-b. Papers where an author is a consortium and the "name" does not include a comma
-c. Author names formatted as first_initial middle_name last_name  
+a. Papers with no author. 
+b. Papers where an author is a consortium and the "name" does not include a comma. 
+c. Author names formatted as first_initial middle_name last_name.  
 2.  Search for relevant papers using keywords and author names to limit the number of spurious papers in the feature vector.
 3. Provide feedback to the user if one or more of the papers by the biologist of interest has no references in its PubMed entry.
 
