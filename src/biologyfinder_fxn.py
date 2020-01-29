@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 from Bio import Entrez
 from Bio import Medline
-from sklearn.metrics import jaccard_similarity_score
 from scipy.stats import pearsonr
+import logging
 
 
 def user_entered_info():
@@ -30,7 +30,7 @@ def user_entered_info():
 
 
 def get_scientist_papers(name, affiliation=None):
-    """Search PubMed for papers whose author list and affiliation list contain the provided author name and affiliation.
+    """Searches PubMed for papers whose author list and affiliation list contain the provided author name and affiliation.
 
     Arguments:
     name - str; complete scientist name in the format "lastname, firstname middleinitial"
@@ -85,8 +85,8 @@ def user_selected_papers(id_list, webenv, query_key):
     return select_list
 
 
-def compile_refs_and_citedin(paper_list):
-    """Takes a list of paper IDs and returns a list of the IDs for papers referenced in the original paper list.  The reference list may be incomplete since PubMed does not provide references for all papers.  If concerned, run the related function 'compile_refs' to identify which papers are missing references.
+def compile_refs_and_citedin(paper_list, logger):
+    """Takes a list of paper IDs and returns a list of the IDs for papers referenced in the original paper list.  The reference list may be incomplete since PubMed does not provide references for all papers.
 
     Arguments:
     paper_list - list; paper IDs (str)
@@ -107,16 +107,16 @@ def compile_refs_and_citedin(paper_list):
                 for ref in refs:
                     ref_ids.append(ref['Id'])
             except UnboundLocalError:
-                print("No references found")
+                logger.info("No references found")
         if entry["LinkName"] == 'pubmed_pubmed_citedin':
             cites = entry["Link"]
             try:
                 for cite in cites:
                     ref_ids.append(cite['Id'])
             except UnboundLocalError:
-                print("No cited in found")
-    print("Length ref_ids list", len(ref_ids))
-    print("Length ref_ids set", len(set(ref_ids)))
+                logger.info("No cited in found")
+    #logger.info("Ref_ids list contains {} ids.".format(len(ref_ids)))
+    #logger.info("After removing duplicates, the ", len(set(ref_ids)))
     return list(set(ref_ids))
 
 
@@ -133,7 +133,6 @@ def get_first_last_authors(paper_id):
     record = Medline.read(handle)
     authors = record.get("FAU", "?")
     first_last_authors = [authors[0], authors[-1]]
-    print(first_last_authors)
     return first_last_authors
 
 
@@ -192,7 +191,7 @@ def remove_duplicates(sorted_list):
     return author_no_dup_list
 
 
-def create_master_biologist_list(paper_list):
+def create_master_biologist_list(paper_list, logger):
     """Searches PubMed for all the papers cited by or that cites a paper on the paper list.  Returns a list of the first and last authors of those papers (duplicates removed).
 
     Arguments:
@@ -201,22 +200,22 @@ def create_master_biologist_list(paper_list):
     Returns:
     biologist_master_list - list; biologist names (str)
     """
-    ref_citedin_ids = compile_refs_and_citedin(paper_list)
+    ref_citedin_ids = compile_refs_and_citedin(paper_list, logger)
     first_last_author_list = []
     for paper in ref_citedin_ids:
-        print("Getting the authors of paper {}.".format(paper))
+        logger.info("Getting the authors of paper {}.".format(paper))
         authors = get_first_last_authors(paper)
         first_last_author_list.extend(authors)
     set_f_l_author_list = list(set(first_last_author_list))
-    print(len(set_f_l_author_list))
+    #print(len(set_f_l_author_list))
     format_f_l_author_list = author_formatting(set_f_l_author_list)
-    print(len(format_f_l_author_list))
+    #print(len(format_f_l_author_list))
     no_dup_f_l_author_list = remove_duplicates(format_f_l_author_list)
-    print(len(no_dup_f_l_author_list))
+    #print(len(no_dup_f_l_author_list))
     return no_dup_f_l_author_list
 
 
-def create_biologist_paper_dict(biologist_list):
+def create_biologist_paper_dict(biologist_list, logger):
     """Takes a list of biologists and looks up the IDs of all the papers they authored in PubMed.  Returns a dictionary where the biologist's name is the key and the value is a list of their paper IDs.
 
     Arguments:
@@ -226,9 +225,10 @@ def create_biologist_paper_dict(biologist_list):
     biologist_paper_dict - dict; keys are biologist names (str) and the values are a list of IDs of the papers authored by the biologist
     """
     biologist_papers_dict = {}
-    for biologist in biologist_list[0:5]:
+    for biologist in biologist_list:
+        logger.info("Looking up papers authored by {}.".format(biologist))
         biologist_nocomma = biologist.replace(',', '')
-        print("Getting papers authored by {}.".format(biologist_nocomma))
+        #logger.info("Getting papers authored by {}.".format(biologist_nocomma))
         papers = get_scientist_papers(biologist_nocomma)[0]
         biologist_papers_dict[biologist] = papers
     zero_papers = []
@@ -240,13 +240,13 @@ def create_biologist_paper_dict(biologist_list):
         else:
             has_papers.append(key)
         total += len(value)
-    print("total papers:", total)
-    print("Zero papers were retrieved for the following authors:", zero_papers)
-    print("More than one paper was retreieved for the following authors:", has_papers)
+    logger.info("The master list of biologists authored {} papers in the PubMed database.".format(total))
+    logger.info("Zero papers were retrieved for the following authors: {}".format(zero_papers))
+    logger.info("More than one paper was retrieved for the following authors: {}".format(has_papers))
     return biologist_papers_dict
 
 
-def get_and_compile_refs(paper_list):
+def get_and_compile_refs(paper_list, logger):
     """Takes a list of paper IDs and returns a list of the IDs of the papers referenced by papers in the original list. The reference list may be incomplete since PubMed does not provide references for all papers.
 
     Arguments:
@@ -268,11 +268,11 @@ def get_and_compile_refs(paper_list):
         for ref in pubmed_refs:
             ref_ids.append(ref['Id'])
     except UnboundLocalError:
-        print("No references found")
+        logger.info("No references found")
     return ref_ids
 
 
-def create_biologist_cited_papers_dict(biologist_paper_dict):
+def create_biologist_cited_papers_dict(biologist_paper_dict, logger):
     """Takes a dictionary of biologists and the papers they wrote, looks up each paper in PubMed and returns a new dictionary containing the biologist and a list of all the papers they cite(reference) within the papers they wrote.
 
     Arguments:
@@ -283,9 +283,9 @@ def create_biologist_cited_papers_dict(biologist_paper_dict):
     """
     biologist_cited_papers_dict = {}
     for key, value in biologist_paper_dict.items():
-        print("Looking up papers cited by ", key)
+        logger.info("Looking up papers cited by {}.".format(key))
         try:
-            paper_list = get_and_compile_refs(value)
+            paper_list = get_and_compile_refs(value, logger)
             biologist_cited_papers_dict[key] = paper_list
         except:
             biologist_cited_papers_dict[key] = []
@@ -304,9 +304,7 @@ def create_paper_features_list(biologist_cited_papers_dict):
     paper_features_temp = []
     for value in biologist_cited_papers_dict.values():
         paper_features_temp.extend(value)
-    print(len(paper_features_temp))
     paper_features = list(set(paper_features_temp))
-    print(len(paper_features))
     return paper_features
 
 
@@ -331,7 +329,7 @@ def create_binary_feature_vectors(biologist_cited_papers_dict, paper_features_li
     return all_binary_feature_vectors
 
 
-def create_comparison_binary_vector(paper_list, paper_features_list):
+def create_comparison_binary_vector(paper_list, paper_features_list, logger):
     """Builds a feature vector for the originating set of papers by looking to see if each paper in the paper_features_list is cited by any of the originating set of papers. Adds a one to the feature vector if the paper is cited and a 0 if it is not.
 
     Arguments:
@@ -342,7 +340,7 @@ def create_comparison_binary_vector(paper_list, paper_features_list):
     comparision_binary_vector - list; list of 1s and 0s that indicate if the originating set of papers cited a paper in the paper_features_list or not
     """
     comparison_binary_vector = []
-    comparison_refs = get_and_compile_refs(chosen_papers)
+    comparison_refs = get_and_compile_refs(paper_list, logger)
     for i in paper_features_list:
         if i in comparison_refs:
             comparison_binary_vector.append(1)
@@ -369,3 +367,88 @@ def create_biologist_finder_df(binary_feature_vectors, paper_features_list, biol
     final_df = pd.concat([temp_df, comp_series])
     final_df.dropna(axis=0, inplace=True)
     return final_df
+
+
+def create_similarity_scores_df(biologist_finder_df):
+    """Calculates pearsonr correlation coefficients between the last row of a dataframe and all the remaining rows. Reports the coefficient ("similarity") in a new dataframe with the same row index as the original dataframe.
+
+    Arguments:
+    biologist_finder_df - pandas dataframe; rows are individual feature vectors and the last row is compared to all other rows
+
+    Returns:
+    sorted_sim_df - pandas dataframe; 2 columns - "scientist" which is the biologist's name and "similarity" which is
+    the pearsonr coefficient between the scientist's feature vector and the last row of biologist_finder_df.  Dataframe is sorted based on similarity scores from highest to lowest.
+    """
+    sim_score = {}
+    for i in range(len(biologist_finder_df)):
+        score = pearsonr(biologist_finder_df.iloc[-1, :], biologist_finder_df.iloc[i, :])
+        sim_score.update({i: score[0]})
+    sim_df = pd.Series(sim_score).to_frame("similarity")
+    sim_df["Scientist"] = biologist_finder_df.index
+    sorted_sim_df = sim_df.sort_values('similarity', ascending=False)
+    return sorted_sim_df
+
+
+def most_sim_biologists(similarity_df, per):
+    """Takes a sorted dataframe and a float representing a percent.  Returns that percentage of the dataframe.
+
+    Arguments:
+    similarity_df - pandas dataframe; sorted dataframe
+    per - float; represents a percentage
+
+    Returns:
+    similarity_df - pandas dataframe; truncated version of starting dataframe containing the user-specified percentage of rows
+    """
+    num_biologists = similarity_df.shape[0]
+    top_per = int(num_biologists * per)
+    similarity_df_per = similarity_df.head(top_per)
+    #print(similarity_df_per)
+    return similarity_df_per
+
+
+def get_citations(rec_paper_list, logger):
+    """Takes a list of paper ID numbers and return a PubMed reference for each paper on the list.
+
+    Arguments:
+    rec_paper_list - list of strs; paper IDs numbers
+
+    Returns:
+    None
+    (prints the references to the screen)
+    """
+    id_list = ",".join(rec_paper_list)
+    search_results = Entrez.read(Entrez.epost("pubmed", id=id_list))
+    query_key = search_results["QueryKey"]
+    webenv = search_results["WebEnv"]
+    handle = Entrez.efetch(db="pubmed", id=id_list, rettype='medline', retmode='text', webenv=webenv, query_key=query_key)
+    records = Medline.parse(handle)
+    for index, record in enumerate(records, 1):
+        logger.info("{}. {} {}. {}. {}. ({})".format(index, record.get("TI", "?"), record.get("AU", "?"), record.get("JT", "?"), record.get("DP", "?"), record.get("PMID", "?")))
+
+def reading_list(biologist_finder_df, most_sim_bio_df, logger):
+    """Takes a dataframe containing the most similar biologists as well as the binary feature vector dataframe. Creates a new dataframe with paper IDs as the index and biologists as columns and it contains a 1 if the biologist ever cited the paper and a 0 if not.  Citations per paper are summed and then the df is sorted so that the most cited papers are at the top.  Prints to the terminal the number of papers cited by 10%, 20%, 30%, etc of the most similar biologists.  Prints to the terminal citations for the user-specified number of papers.
+
+    Arguments:
+    biologist_finder_df - pandas dataframe; rows are individual biologist feature vectors
+    most_sim_bio_df - pandas dataframe; 2 columns - "scientist" which is the biologist's name and "similarity" which is the pearsonr coefficient between scientist's feature vector and the last row of biologist_finder_df.
+
+    Returns:
+    None
+    (prints to the terminal citations for a user-specified number of most cited papers)
+    """
+    top_per_biologists = list(most_sim_bio_df.iloc[1:, 1])
+    num_top_biologists = len(top_per_biologists)
+    most_cited_papers = biologist_finder_df.loc[top_per_biologists, :][biologist_finder_df.loc[top_per_biologists, :] ==1].fillna(0).T
+    most_cited_papers['sum'] = most_cited_papers.sum(axis=1)
+    most_cited_papers_sort = most_cited_papers.sort_values('sum', ascending=False)
+    total_num_papers = most_cited_papers_sort.shape[0]
+    for i in range(10, 110, 10):
+        per_of_top_biol = round(num_top_biologists * i/100)
+        num_papers = most_cited_papers_sort[most_cited_papers_sort["sum"] >= per_of_top_biol].shape[0]
+        if num_papers != 1:
+            logger.info("{} papers were cited at least once by {}% ({}) of the most similar biologists.".format(num_papers, i, per_of_top_biol))
+        else:
+            logger.info("{} paper was cited at least once by {}% ({}) of the most similar biologists.".format(num_papers, i, per_of_top_biol))
+    num_papers = int(input("How many papers do you want on the recommended reading list? "))
+    reading_list_ids = most_cited_papers_sort.head(num_papers).index.to_list()
+    get_citations(reading_list_ids, logger)

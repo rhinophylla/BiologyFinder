@@ -1,3 +1,5 @@
-1/22/2020
+ "BiologyFinder" is a tool aimed at new biology graduate students or postdoctoral researchers who have just joined a lab and are looking to understand the research of the lab.  It is written in Python and relies on the Python library, Biopython, to interact with the API of NCBI's PubMed, a biology literature database.  It uses a shared citation history to identify biologists doing work similar to a user-named biologist.  It then generates a recommended reading list containing the papers most frequently cited by the identified group of biologists in the subfield.
 
-I am still working on modularizing the code from the Jupyter notebook so the main.py and biologyfinder_fxn.py files are incomplete.  At this time, the report should be considered a rough draft.  Check back soon for the finalized project.  
+ The code is found in both Python scripts and a Jupyter notebook.  To run the scripts, download the src folder to your computer, then run the "main.py" file.  You will need to enter your email address and your NCBI API key which can be obtained for free by registering for an account, into the relevant part of the code before running it.
+
+A detailed explanation of the program and an example of its use can be found in the "reports" folder.
